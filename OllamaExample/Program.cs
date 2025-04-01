@@ -1,4 +1,7 @@
 ﻿
+// https://blog.antosubash.com/posts/ollama-semantic-kernal-connector
+// https://www.youtube.com/watch?v=MsH6rYAkVZg
+
 /*using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
