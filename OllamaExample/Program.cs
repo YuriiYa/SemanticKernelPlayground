@@ -1,44 +1,4 @@
 ﻿
-// https://blog.antosubash.com/posts/ollama-semantic-kernal-connector
-// https://www.youtube.com/watch?v=MsH6rYAkVZg
-
-/*using Microsoft.Extensions.DependencyInjection;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
-using OllamaSharp;
-
-var builder = Kernel.CreateBuilder();
-
-builder.Services.AddScoped<IOllamaApiClient>(_ => new OllamaApiClient("http://localhost:11434"));
-
-builder.Services.AddScoped<IChatCompletionService, OllamaChatCompletionService>();
-
-var kernel = builder.Build();
-
-var chatService = kernel.GetRequiredService<IChatCompletionService>();
-
-var history = new ChatHistory();
-history.AddSystemMessage("You are help full assistant that will help you with your questions.");
-
-while (true)
-{
-    Console.Write("You: ");
-    var userMessage = Console.ReadLine();
-
-    if (string.IsNullOrWhiteSpace(userMessage))
-    {
-        break;
-    }
-
-    history.AddUserMessage(userMessage);
-
-    var response = await chatService.GetChatMessageContentAsync(history);
-
-    Console.WriteLine($"Bot: {response.Content}");
-
-    history.AddMessage(response.Role, response.Content ?? string.Empty);
-}
-*/
 
 // https://blog.antosubash.com/posts/ollama-semantic-kernal-connector
 using System.IO.MemoryMappedFiles;
@@ -52,15 +12,15 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Embeddings;
 using Microsoft.SemanticKernel.Memory;
 using Microsoft.SemanticKernel.TextGeneration;
+using OllamaSharp;
+using OllamaPlayground;
 
-Uri endpoint = new Uri("http://localhost:11434");
 const string question = "What is Harry's Address?";
-const string model = "llama3";
 
 var builder = Kernel.CreateBuilder();
-builder.AddOllamaChatCompletion(model, endpoint)
-.AddOllamaTextEmbeddingGeneration(model, endpoint)
-.AddOllamaTextGeneration(model, endpoint);
+builder.AddOllamaChatCompletion(OllamaChatCompletionService.modelId, OllamaChatCompletionService.endpoint)
+.AddOllamaTextEmbeddingGeneration(OllamaChatCompletionService.modelId, OllamaChatCompletionService.endpoint)
+.AddOllamaTextGeneration(OllamaChatCompletionService.modelId, OllamaChatCompletionService.endpoint);
 
 var kernel = builder.Build();
 var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -68,9 +28,10 @@ var embedingsService = kernel.GetRequiredService<ITextEmbeddingGenerationService
 var textService = kernel.GetRequiredService<ITextGenerationService>();
 
 // https://github.com/microsoft/kernel-memory/blob/main/README.md
+// https://microsoft.github.io/kernel-memory/service/architecture
 var memory = new KernelMemoryBuilder()
-    .WithSemanticKernelTextEmbeddingGenerationService(embedingsService, new Microsoft.KernelMemory.SemanticKernel.SemanticKernelConfig(){ MaxTokenTotal=400}, textTokenizer: Microsoft.KernelMemory.AI.TokenizerFactory.GetTokenizerForModel(model))
-    .WithSemanticKernelTextGenerationService(textService, new Microsoft.KernelMemory.SemanticKernel.SemanticKernelConfig(){ MaxTokenTotal=400 }, textTokenizer: Microsoft.KernelMemory.AI.TokenizerFactory.GetTokenizerForModel(model))
+    .WithSemanticKernelTextEmbeddingGenerationService(embedingsService, new Microsoft.KernelMemory.SemanticKernel.SemanticKernelConfig(){ MaxTokenTotal=400}, textTokenizer: Microsoft.KernelMemory.AI.TokenizerFactory.GetTokenizerForModel(OllamaChatCompletionService.modelId))
+    .WithSemanticKernelTextGenerationService(textService, new Microsoft.KernelMemory.SemanticKernel.SemanticKernelConfig(){ MaxTokenTotal=400 }, textTokenizer: Microsoft.KernelMemory.AI.TokenizerFactory.GetTokenizerForModel(OllamaChatCompletionService.modelId))
     .WithSimpleFileStorage(new Microsoft.KernelMemory.DocumentStorage.DevTools.SimpleFileStorageConfig(){ Directory = "memory", StorageType = Microsoft.KernelMemory.FileSystem.DevTools.FileSystemTypes.Volatile })
     .WithCustomTextPartitioningOptions(
         new TextPartitioningOptions
@@ -81,30 +42,8 @@ var memory = new KernelMemoryBuilder()
     .Build();
 builder.Services.AddSingleton<IKernelMemory>(memory);
 // Import a file
-await memory.ImportDocumentAsync("C:\\projects\\study\\AIML\\harry-potter-and-the-philosophers-stone-by-jk-rowling.pdf", "harry-potter-and-the-philosophers-stone-by-jk-rowling.pdf");
+await memory.ImportDocumentAsync(new Document("harry-potter-and-the-philosophers-stone-by-jk-rowling.pdf").AddFile("C:\\projects\\YuriiYa\\SemanticKernelPlayground\\harry-potter-and-the-philosophers-stone-by-jk-rowling.pdf"), index: "potterindex001", steps:Constants.PipelineWithoutSummary);
 
-var answer1 = await memory.AskAsync(question,minRelevance:0.8f,options: new SearchOptions { Stream=false});
+var answer1 = await memory.AskAsync(question,minRelevance:0.9f,options: new SearchOptions { Stream=true});
 
-
-
-var history = new ChatHistory();
-history.AddSystemMessage("You are a helpful assistant.");
-
-while (true)
-{
-    Console.Write("You: ");
-    var userMessage = Console.ReadLine();
-
-    if (string.IsNullOrWhiteSpace(userMessage))
-    {
-        break;
-    }
-
-    history.AddUserMessage(userMessage);
-
-    var response = await chatService.GetChatMessageContentAsync(history);
-
-    Console.WriteLine($"Bot: {response.Content}");
-
-    history.AddMessage(response.Role, response.Content ?? string.Empty);
-}
+Console.WriteLine($"My answer is {answer1}");

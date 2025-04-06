@@ -5,10 +5,11 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using OllamaSharp;
 using OllamaSharp.Models.Chat;
 
+namespace OllamaPlayground;
 public class OllamaChatCompletionService : IChatCompletionService
 {
-    private readonly static string modelId = "llama3";
-    //private readonly static Uri endpoint = new Uri("http://localhost:11434");
+    public readonly static string modelId = "llama3.1";
+    public readonly static Uri endpoint = new Uri("http://localhost:11434");
 
 
     private readonly IOllamaApiClient ollamaApiClient;
